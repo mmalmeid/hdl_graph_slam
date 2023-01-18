@@ -221,6 +221,7 @@ private:
           anchor_node = graph_slam->add_se3_node(Eigen::Isometry3d::Identity());
           anchor_node->setFixed(true);
           anchor_edge = graph_slam->add_se3_edge(anchor_node, keyframe->node, Eigen::Isometry3d::Identity(), inf);
+          ROS_WARN("anchor_edge: %p, %d, %d", anchor_edge, anchor_edge, anchor_edge->id());
         }
       }
 
@@ -629,7 +630,7 @@ private:
     traj_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 
     traj_marker.pose.orientation.w = 1.0;
-    traj_marker.scale.x = traj_marker.scale.y = traj_marker.scale.z = 0.5;
+    traj_marker.scale.x = traj_marker.scale.y = traj_marker.scale.z = 0.1;
 
     visualization_msgs::Marker& imu_marker = markers.markers[1];
     imu_marker.header = traj_marker.header;
@@ -638,7 +639,7 @@ private:
     imu_marker.type = visualization_msgs::Marker::SPHERE_LIST;
 
     imu_marker.pose.orientation.w = 1.0;
-    imu_marker.scale.x = imu_marker.scale.y = imu_marker.scale.z = 0.75;
+    imu_marker.scale.x = imu_marker.scale.y = imu_marker.scale.z = 0.075;
 
     traj_marker.points.resize(keyframes.size());
     traj_marker.colors.resize(keyframes.size());
@@ -681,7 +682,7 @@ private:
     edge_marker.type = visualization_msgs::Marker::LINE_LIST;
 
     edge_marker.pose.orientation.w = 1.0;
-    edge_marker.scale.x = 0.05;
+    edge_marker.scale.x = 0.005;
 
     edge_marker.points.resize(graph_slam->graph->edges().size() * 2);
     edge_marker.colors.resize(graph_slam->graph->edges().size() * 2);
@@ -851,25 +852,24 @@ private:
     
     // Load special nodes.
     std::ifstream ifs(directory + "/special_nodes.csv");
-    if(!ifs) {
+    if (!ifs) {
       return false;
     }
-    while(!ifs.eof()) {
+    while (!ifs.eof()) {
       std::string token;
       ifs >> token;
       if(token == "anchor_node") {
         int id = 0;
         ifs >> id;
         anchor_node = static_cast<g2o::VertexSE3*>(graph_slam->graph->vertex(id));
-      } else if(token == "anchor_edge") {
+      } else if (token == "anchor_edge") {
         int id = 0;
-        ifs >> id; 
+        ifs >> id;
         // We have no way of directly pulling the edge based on the edge ID that we have just read in.
         // Fortunatly anchor edges are always attached to the anchor node so we can iterate over 
         // the edges that listed against the node untill we find the one that matches our ID.
-        if(anchor_node){
+        if (anchor_node) {
           auto edges = anchor_node->edges();
-
           for(auto e : edges) {
             int edgeID =  e->id();
             if (edgeID == id){
@@ -885,7 +885,13 @@ private:
         floor_plane_node = static_cast<g2o::VertexPlane*>(graph_slam->graph->vertex(id));
       }
     }
-    std::cout << "loaded special nodes - anchor_node: "<< anchor_node->id() << " anchor_edge: "<< anchor_edge->id() << " floor_node: "<< floor_plane_node->id() << std::endl;
+    std::cout <<   "loaded special nodes - anchor_node: " << anchor_node->id() << std::endl;
+    if (anchor_edge) {
+      std::cout << "                       anchor_edge: " << anchor_edge->id() <<  std::endl;
+    }
+    if (floor_plane_node) {
+      std::cout << "                        floor_node: " << floor_plane_node->id() << std::endl;
+    }
 
     
     // Update our keyframe snapshot so we can publish a map update, trigger update with graph_updated = true.
@@ -899,7 +905,7 @@ private:
 
     res.success = true;
 
-    std::cout << "snapshot updated" << std::endl << "loading successful" <<std::endl;
+    std::cout << "snapshot updated" << std::endl << "loading successful" << std::endl;
 
     return true;
   }
@@ -950,6 +956,7 @@ private:
     ofs << "anchor_node " << (anchor_node == nullptr ? -1 : anchor_node->id()) << std::endl;
     ofs << "anchor_edge " << (anchor_edge == nullptr ? -1 : anchor_edge->id()) << std::endl;
     ofs << "floor_node " << (floor_plane_node == nullptr ? -1 : floor_plane_node->id()) << std::endl;
+    ROS_WARN("anchor_edge saving: %p, %d, %d", anchor_edge, anchor_edge, anchor_edge->id());
 
     res.success = true;
     return true;
