@@ -38,7 +38,9 @@ class BagPlayer:
 		self.publishers = {}
 		for con in self.bag._get_connections():
 			msg_class = roslib.message.get_message_class(con.datatype)
-			self.publishers[con.topic] = rospy.Publisher(con.topic, msg_class, queue_size=256)
+			print(f"{con.topic}, {msg_class}")
+			if (msg_class is not None):
+				self.publishers[con.topic] = rospy.Publisher(con.topic, msg_class, queue_size=256)
 		self.clock_pub = rospy.Publisher('/clock', Clock, queue_size=256)
 
 		self.init_time = None
